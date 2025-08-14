@@ -1259,7 +1259,11 @@
         function addEventListeners() {
             // Add click listeners to all symptom items
             document.querySelectorAll('.symptom-item').forEach(item => {
-                item.addEventListener('click', function() {
+                item.addEventListener('click', function(e) {
+                    // Don't trigger if clicking on severity buttons
+                    if (e.target.classList.contains('severity-btn')) {
+                        return;
+                    }
                     handleSymptomClick(this);
                 });
             });
@@ -1268,6 +1272,7 @@
             document.querySelectorAll('.severity-btn').forEach(btn => {
                 btn.addEventListener('click', function(e) {
                     e.stopPropagation();
+                    e.preventDefault();
                     handleSeverityClick(this);
                 });
             });
@@ -1277,11 +1282,18 @@
             const srotas = item.dataset.srotas;
             const symptom = item.dataset.symptom;
 
+            if (!srotas || !symptom) {
+                console.error('Missing srotas or symptom data:', item);
+                return;
+            }
+
             // Toggle selection
             if (item.classList.contains('selected')) {
                 // Deselect
                 item.classList.remove('selected');
                 removeSymptom(srotas, symptom);
+                // Clear severity button states
+                item.querySelectorAll('.severity-btn').forEach(b => b.classList.remove('active'));
             } else {
                 // Select with default severity 1
                 item.classList.add('selected');
@@ -1300,9 +1312,19 @@
 
         function handleSeverityClick(btn) {
             const item = btn.closest('.symptom-item');
+            if (!item) {
+                console.error('Could not find parent symptom item for button:', btn);
+                return;
+            }
+
             const srotas = item.dataset.srotas;
             const symptom = item.dataset.symptom;
             const severity = parseInt(btn.dataset.score);
+
+            if (!srotas || !symptom || isNaN(severity)) {
+                console.error('Invalid data for severity click:', {srotas, symptom, severity});
+                return;
+            }
 
             // Update severity button visual state
             item.querySelectorAll('.severity-btn').forEach(b => b.classList.remove('active'));
@@ -1316,6 +1338,11 @@
         }
 
         function addSymptom(srotas, symptom, severity = 1) {
+            if (!srotasData.selectedSymptoms[srotas]) {
+                console.error(`Invalid srotas: ${srotas}`);
+                return;
+            }
+
             // Remove if already exists
             removeSymptom(srotas, symptom);
             
@@ -1326,32 +1353,65 @@
             });
 
             // Update scores
+            if (!srotasData.scores[srotas]) {
+                srotasData.scores[srotas] = 0;
+            }
             srotasData.scores[srotas] += severity;
+            
+            console.log(`Added ${symptom} to ${srotas} with severity ${severity}. New score: ${srotasData.scores[srotas]}`);
         }
 
         function removeSymptom(srotas, symptom) {
+            if (!srotasData.selectedSymptoms[srotas]) {
+                console.error(`Invalid srotas: ${srotas}`);
+                return;
+            }
+
             const symptoms = srotasData.selectedSymptoms[srotas];
             const index = symptoms.findIndex(s => s.symptom === symptom);
             
             if (index !== -1) {
                 // Remove from score
+                if (!srotasData.scores[srotas]) {
+                    srotasData.scores[srotas] = 0;
+                }
                 srotasData.scores[srotas] -= symptoms[index].severity;
+                
+                // Ensure score doesn't go negative
+                if (srotasData.scores[srotas] < 0) {
+                    srotasData.scores[srotas] = 0;
+                }
+                
                 // Remove from array
                 symptoms.splice(index, 1);
+                
+                console.log(`Removed ${symptom} from ${srotas}. New score: ${srotasData.scores[srotas]}`);
             }
         }
 
         function updateSymptomSeverity(srotas, symptom, newSeverity) {
+            if (!srotasData.selectedSymptoms[srotas]) {
+                console.error(`Invalid srotas: ${srotas}`);
+                return;
+            }
+
             const symptoms = srotasData.selectedSymptoms[srotas];
             const symptomObj = symptoms.find(s => s.symptom === symptom);
             
             if (symptomObj) {
                 // Update score (subtract old, add new)
+                if (!srotasData.scores[srotas]) {
+                    srotasData.scores[srotas] = 0;
+                }
                 srotasData.scores[srotas] -= symptomObj.severity;
                 srotasData.scores[srotas] += newSeverity;
                 
                 // Update severity
                 symptomObj.severity = newSeverity;
+                
+                console.log(`Updated ${symptom} in ${srotas} to severity ${newSeverity}. New score: ${srotasData.scores[srotas]}`);
+            } else {
+                console.warn(`Symptom ${symptom} not found in ${srotas} for severity update`);
             }
         }
 
@@ -1386,10 +1446,20 @@
         }
 
         function updateDisplay() {
-            // Update score displays
-            Object.keys(srotasData.scores).forEach(srotas => {
+            // Update score displays for all srotas
+            const allSrotas = [
+                'pranavaha', 'udakavaha', 'annavaha', 'rasavaha', 'raktavaha',
+                'mamsavaha', 'medavaha', 'asthivaha', 'majjavaha', 'shukravaha',
+                'mutravaha', 'purishavaha', 'swedavaha', 'artavavaha', 'stanyavaha'
+            ];
+
+            allSrotas.forEach(srotas => {
                 const scoreEl = document.getElementById(`${srotas}-score`);
-                if (scoreEl) scoreEl.textContent = srotasData.scores[srotas];
+                if (scoreEl) {
+                    scoreEl.textContent = srotasData.scores[srotas] || 0;
+                } else {
+                    console.warn(`Score element not found for: ${srotas}`);
+                }
             });
 
             // Update selected symptoms summary
