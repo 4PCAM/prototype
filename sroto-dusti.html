@@ -1173,6 +1173,27 @@
             completed: false
         };
 
+        // Initialize all srotas data to ensure consistency
+        function initializeSrotasData() {
+            const allSrotas = [
+                'pranavaha', 'udakavaha', 'annavaha', 'rasavaha', 'raktavaha',
+                'mamsavaha', 'medavaha', 'asthivaha', 'majjavaha', 'shukravaha',
+                'mutravaha', 'purishavaha', 'swedavaha', 'artavavaha', 'stanyavaha'
+            ];
+
+            // Ensure all srotas exist in scores object
+            allSrotas.forEach(srotas => {
+                if (!srotasData.scores.hasOwnProperty(srotas)) {
+                    srotasData.scores[srotas] = 0;
+                }
+                if (!srotasData.selectedSymptoms.hasOwnProperty(srotas)) {
+                    srotasData.selectedSymptoms[srotas] = [];
+                }
+            });
+
+            console.log('✅ All srotas data initialized:', Object.keys(srotasData.scores));
+        }
+
         let patientData = {};
         let agniData = {};
         let doshaData = {};
@@ -1180,10 +1201,12 @@
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
+            initializeSrotasData();
             loadPreviousData();
             loadPreviousSrotasData();
             addEventListeners();
             updateDisplay();
+            console.log('🌊 Complete Srotas Assessment System initialized with all 15 srotas');
         });
 
         function loadPreviousData() {
@@ -1420,11 +1443,34 @@
             if (saved) {
                 try {
                     const data = JSON.parse(saved);
-                    srotasData = { ...srotasData, ...data };
+                    
+                    // Merge saved data with initialized structure
+                    if (data.scores) {
+                        Object.keys(data.scores).forEach(srotas => {
+                            if (srotasData.scores.hasOwnProperty(srotas)) {
+                                srotasData.scores[srotas] = data.scores[srotas];
+                            }
+                        });
+                    }
+                    
+                    if (data.selectedSymptoms) {
+                        Object.keys(data.selectedSymptoms).forEach(srotas => {
+                            if (srotasData.selectedSymptoms.hasOwnProperty(srotas)) {
+                                srotasData.selectedSymptoms[srotas] = data.selectedSymptoms[srotas] || [];
+                            }
+                        });
+                    }
+                    
+                    srotasData.completed = data.completed || false;
+                    srotasData.timestamp = data.timestamp;
+                    
                     restoreSelections();
+                    console.log('✅ Previous srotas data loaded and merged');
                 } catch (e) {
-                    console.log('Could not load previous srotas data');
+                    console.log('Could not load previous srotas data:', e);
                 }
+            } else {
+                console.log('No previous srotas data found - starting fresh');
             }
         }
 
@@ -1456,9 +1502,11 @@
             allSrotas.forEach(srotas => {
                 const scoreEl = document.getElementById(`${srotas}-score`);
                 if (scoreEl) {
-                    scoreEl.textContent = srotasData.scores[srotas] || 0;
+                    const currentScore = srotasData.scores[srotas] || 0;
+                    scoreEl.textContent = currentScore;
+                    console.log(`Updated ${srotas} score display to: ${currentScore}`);
                 } else {
-                    console.warn(`Score element not found for: ${srotas}`);
+                    console.error(`❌ Score element NOT FOUND for: ${srotas}-score`);
                 }
             });
 
