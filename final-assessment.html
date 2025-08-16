@@ -806,6 +806,8 @@
             let srotasHTML = '<div class="score-grid">';
 
             const srotasNames = {
+                pranavaha: 'Pranavaha',
+                udakavaha: 'Udakavaha',
                 annavaha: 'Annavaha',
                 rasavaha: 'Rasavaha',
                 raktavaha: 'Raktavaha',
@@ -814,7 +816,11 @@
                 asthivaha: 'Asthivaha',
                 majjavaha: 'Majjavaha',
                 shukravaha: 'Shukravaha',
-                mutravaha: 'Mutravaha'
+                mutravaha: 'Mutravaha',
+                purishavaha: 'Purishavaha',
+                swedavaha: 'Swedavaha',
+                artavavaha: 'Artavavaha',
+                stanyavaha: 'Stanyavaha'
             };
 
             Object.keys(srotas.scores || {}).forEach(srotasName => {
@@ -930,7 +936,7 @@
             const affectedSrotas = Object.keys(srotasScores).filter(s => srotasScores[s] > 0).length;
             
             document.getElementById('srotas-summary').innerHTML = `
-                <p><strong>Affected Channels:</strong> ${affectedSrotas}/9</p>
+                <p><strong>Affected Channels:</strong> ${affectedSrotas}/15</p>
                 <p><strong>Total Score:</strong> ${totalSrotasScore}</p>
                 <p><strong>Severity:</strong> ${getSrotasSeverity(totalSrotasScore)}</p>
             `;
@@ -1055,9 +1061,10 @@
 
         function getSrotasSeverity(score) {
             if (score === 0) return 'All channels functioning optimally';
-            if (score <= 10) return 'Mild channel dysfunction';
-            if (score <= 20) return 'Moderate channel blockage';
-            return 'Severe channel pathology';
+            if (score <= 15) return 'Mild channel dysfunction';
+            if (score <= 30) return 'Moderate channel blockage';
+            if (score <= 50) return 'Severe channel pathology';
+            return 'Critical channel dysfunction requiring immediate intervention';
         }
 
         // Export and action functions
@@ -1274,7 +1281,7 @@
             return {
                 totalScore,
                 affectedSrotas,
-                totalSrotas: 9,
+                totalSrotas: 15,
                 selectedSymptoms: Object.values(srotas.selectedSymptoms || {}).reduce((total, symptoms) => total + symptoms.length, 0)
             };
         }
